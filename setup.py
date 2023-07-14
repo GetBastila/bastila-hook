@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='bastila_search',
-    version='0.1',
+    version='0.4.1',
     description='A python script that catches commits that introduce predefined deprecated patterns',
     url='https://github.com/GetBastila/bastila-hook',
     author='Bastila',
@@ -12,5 +12,11 @@ setup(
     install_requires=[
         'requests',
     ],
+    entry_points={
+        'console_scripts': [
+            'bastila_setup=bastila_search.setup_config:main',
+            'bastila_run=bastila_search.bastila_search:main'
+        ]
+    },
     zip_safe=False
 )
