@@ -18,9 +18,10 @@ def load_config():
         return None
 
 
-def handle_exception(error):
+def handle_exception(error, prevent_regression):
     print(error)
-    sys.exit(1)
+    if prevent_regression:
+        sys.exit(1)
 
 
 def fetch_patterns(session):
@@ -120,7 +121,7 @@ def main():
 
     if config is None and BASTILA_KEY is None:
         print("Configuration not found. Please run the command bastila_setup or setup an environment file to set up the necessary parameters.")
-        handle_exception()
+        handle_exception('Configuration not setup', PREVENT_REGRESSION)
     elif config is not None:
         BASTILA_KEY = config["BASTILA_KEY"]
         PREVENT_REGRESSION = config["PREVENT_REGRESSION"]
@@ -137,21 +138,21 @@ def main():
         check = create_check(session)
     except Exception as e:
         print('Create check failed')
-        handle_exception(e)
+        handle_exception(e, PREVENT_REGRESSION)
 
     try:
         print('Fetching patterns')
         patterns = fetch_patterns(session)
     except Exception as e:
         print('Fetch patterns failed')
-        handle_exception(e)
+        handle_exception(e, PREVENT_REGRESSION)
 
     try:
         print('Searching files')
         results = search_files(patterns)
     except Exception as e:
         print('Fetch patterns failed')
-        handle_exception(e)
+        handle_exception(e, PREVENT_REGRESSION)
 
     if POST_RESULTS:
         try:
@@ -162,7 +163,7 @@ def main():
             })
         except Exception as e:
             print('Posting results failed')
-            handle_exception(e)
+            handle_exception(e, PREVENT_REGRESSION)
 
     is_regression = False
     for result in results:
