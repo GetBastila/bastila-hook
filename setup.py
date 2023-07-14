@@ -1,9 +1,14 @@
 from setuptools import setup
 
+with open("README.md", "r", encoding="utf-8") as fh:
+    long_description = fh.read()
+
 setup(
     name='bastila_search',
-    version='0.4.1',
+    version='0.4.4',
     description='A python script that catches commits that introduce predefined deprecated patterns',
+    long_description=long_description,
+    long_description_content_type="text/markdown",
     url='https://github.com/GetBastila/bastila-hook',
     author='Bastila',
     author_email='hello@bastila.app',
