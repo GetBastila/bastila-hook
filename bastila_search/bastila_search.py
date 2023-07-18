@@ -2,7 +2,6 @@ import requests
 import json
 import re
 import sys
-import os
 import fnmatch
 
 from pathlib import Path
@@ -16,12 +15,6 @@ def load_config():
             return json.load(file)
     except FileNotFoundError:
         return None
-
-
-def handle_exception(error, prevent_regression):
-    print(error)
-    if prevent_regression:
-        sys.exit(1)
 
 
 def fetch_patterns(session):
@@ -115,14 +108,10 @@ def create_check(session):
 def main():
     config = load_config()
 
-    BASTILA_KEY = os.getenv("BASTILA_KEY", None)
-    POST_RESULTS = os.getenv('POST_RESULTS', 'false').lower() == 'true'
-    PREVENT_REGRESSION = os.getenv("PREVENT_REGRESSION", 'false').lower() == 'true'
-
-    if config is None and BASTILA_KEY is None:
-        print("Configuration not found. Please run the command bastila_setup or setup an environment file to set up the necessary parameters.")
-        handle_exception('Configuration not setup', PREVENT_REGRESSION)
-    elif config is not None:
+    if config is None:
+        print("Configuration not found. Please run the command bastila_setup to set up the necessary parameters.")
+        sys.exit(1)
+    else:
         BASTILA_KEY = config["BASTILA_KEY"]
         PREVENT_REGRESSION = config["PREVENT_REGRESSION"]
 
@@ -135,35 +124,25 @@ def main():
 
     try:
         print('Starting check')
-        check = create_check(session)
+        create_check(session)
     except Exception as e:
-        print('Create check failed')
-        handle_exception(e, PREVENT_REGRESSION)
+        print(e)
+        sys.exit(1)
 
     try:
         print('Fetching patterns')
         patterns = fetch_patterns(session)
     except Exception as e:
-        print('Fetch patterns failed')
-        handle_exception(e, PREVENT_REGRESSION)
+        print(e)
+        sys.exit(1)
 
+    results = []
     try:
         print('Searching files')
         results = search_files(patterns)
     except Exception as e:
-        print('Fetch patterns failed')
-        handle_exception(e, PREVENT_REGRESSION)
-
-    if POST_RESULTS:
-        try:
-            print('Posting results')
-            post_results(session, {
-              'check': check['id'],
-              'results': results
-            })
-        except Exception as e:
-            print('Posting results failed')
-            handle_exception(e, PREVENT_REGRESSION)
+        print(e)
+        sys.exit(1)
 
     is_regression = False
     for result in results:
