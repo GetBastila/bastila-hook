@@ -3,6 +3,7 @@ import json
 import re
 import sys
 import fnmatch
+import subprocess
 
 from pathlib import Path
 
@@ -47,6 +48,10 @@ def search_files(patterns):
     results = []
     gitignore_paths = read_gitignore()
 
+    # Fetch list of added or modified files using git
+    added_files = subprocess.check_output(['git', 'diff', '--name-only', '--cached']).decode('utf-8').split('\n')
+    added_files = [Path(file_path) for file_path in added_files if file_path != '']
+
     # Loop over every pattern
     for pattern in patterns:
         # Extract file paths to search or exclude
@@ -57,10 +62,9 @@ def search_files(patterns):
         # Loop over every file
         for include_pattern in include_paths:
             for path in Path('.').glob(include_pattern):
-                if path.is_dir():
+                if path.is_dir() or path not in added_files:
                     continue
 
-                # Convert Path object to string
                 path_str = str(path)
 
                 # Skip file if it is in .gitignore or in exclude_paths
@@ -75,12 +79,11 @@ def search_files(patterns):
                 patterns_in_file = re.findall(pattern['snippet'].encode(), content)
                 snippet_instances += len(patterns_in_file)
 
-        pattern_failed = pattern['previous_count'] and (snippet_instances > pattern['previous_count'])
         results.append({
             'id': pattern['id'],
             'previous_count': pattern['previous_count'],
             'count': snippet_instances,
-            'is_successful': not pattern_failed,
+            'is_successful': snippet_instances == 0,
             'fix_recommendation': "Use {0} instead of {1}".format(pattern['fix_recommendation'], pattern['snippet'])
         })
 
